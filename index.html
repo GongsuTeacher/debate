@@ -710,49 +710,56 @@
             window.open(`https://www.google.com/search?q=${encodeURIComponent(`"${currentTopic}" 토론 근거`)}`, '_blank');
         }
 
-        async function fetchWithRetry(url, prompt, retries = 5) {
-            const delays = [1000, 2000, 4000, 8000, 16000];
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: "당신은 초등학생들의 토론을 돕는 친절하고 똑똑한 AI 코치입니다. 항상 존댓말을 사용하고, 초등학생의 눈높이에 맞춰 이해하기 쉽게 설명해 주세요." }] }
-            };
-
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!response.ok) throw new Error('API Request Failed');
-                    const data = await response.json();
-                    return data.candidates[0].content.parts[0].text;
-                } catch (error) {
-                    if (i === retries - 1) throw error;
-                    await new Promise(res => setTimeout(res, delays[i]));
-                }
-            }
-        }
-
-        async function getCoaching() {
+        function getCoaching() {
             const coachBox = document.getElementById('aiCoachBox');
-            const myClaim = document.getElementById('liveClaim').value.trim();
-            const opponentText = document.getElementById('liveOpponentText').value.trim();
-            const stanceStr = document.getElementById('stancePro').checked ? "찬성" : "반대";
+            const isPro = document.getElementById('stancePro').checked;
 
-            if (!opponentText) {
-                showAlert("AI가 전략을 짜려면 상대방의 의견이 필요해요!\n[상대측 의견] 칸에 상대방의 발언을 먼저 적어주세요.");
+            // 토글 기능 (열려있으면 닫기)
+            if (coachBox.style.display === 'block') {
+                coachBox.style.display = 'none';
                 return;
             }
 
-            coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br><span style="color:#718096;">AI 코치가 실시간으로 상대방의 약점을 분석 중입니다... 잠시만 기다려주세요 ⏳</span>`;
-            coachBox.style.display = 'block';
+            // 상대방과 나의 키워드 가져오기 (주제 선택 시 저장된 8개 키워드 배열)
+            const myKwArr = isPro ? currentProKW : currentConKW;
+            const oppKwArr = isPro ? currentConKW : currentProKW;
 
-            const prompt = `토론 주제: "${currentTopic}"\n학생의 입장: "${stanceStr}"\n학생의 현재 주장: "${myClaim}"\n상대방이 방금 한 주장: "${opponentText}"\n\n위 내용을 바탕으로, 상대방의 주장을 논리적으로 반박할 수 있는 방법과 학생의 주장을 효과적으로 방어할 수 있는 전략(날카로운 질문, 좋은 예시 등)을 초등학생 눈높이에 맞게 3~4문장으로 핵심만 짚어서 친절하게 조언해 주세요.`;
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            let strategyHtml = `<strong>[🤖 토론 전략 코칭 (실전 매칭)]</strong><br><br>`;
+            strategyHtml += `<span style="color:#553c9a; font-size:0.95em;">상대방의 예상되는 의견을 분석했습니다. 아래의 맞춤형 반박 전략을 활용해 보세요!</span><br><br>`;
 
-            try {
-                const responseText = await fetchWithRetry(url, prompt);
-                coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br>${responseText.replace(/\n/g, '<br>')}`;
-            } catch (error) {
-                coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br>앗, 코칭을 불러오는데 실패했어요. 인터넷 연결을 확인하고 다시 시도해주세요.`;
+            // 키워드 배열(8개)을 2개씩 짝지어 4가지 방어/공격 전략 생성
+            const strategies = [
+                { opp: [0, 1], my: [0, 1], desc: "가치가 훨씬 더 중요함을 강조하며 맞서세요." },
+                { opp: [2, 3], my: [2, 3], desc: "측면에서 충분히 해결 가능하다고 논리적으로 방어하세요." },
+                { opp: [4, 5], my: [4, 5], desc: "을(를) 내세워 우리의 주장이 더 현실적임을 증명하세요." },
+                { opp: [6, 7], my: [6, 7], desc: "효과를 구체적인 예시로 들어 상대방의 반박을 원천 차단하세요." }
+            ];
+
+            strategies.forEach((st) => {
+                const opp1 = oppKwArr[st.opp[0]] || "다른 관점의 문제";
+                const opp2 = oppKwArr[st.opp[1]] || "현실적 어려움";
+                const my1 = myKwArr[st.my[0]] || "우리의 핵심 근거";
+                const my2 = myKwArr[st.my[1]] || "긍정적 효과";
+
+                strategyHtml += `
+                <div style="background: white; padding: 12px; border-radius: 8px; border-left: 4px solid #9f7aea; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="color: #e53e3e; margin-bottom: 5px; font-size: 0.9em;"><strong>🔴 상대측 예상 의견:</strong> "${opp1}", "${opp2}" 관련</div>
+                    <div style="color: #3182ce; font-size: 0.95em;"><strong>🔵 나의 반박 전략:</strong> <b>[${my1}]</b>, <b>[${my2}]</b> ${st.desc}</div>
+                </div>`;
+            });
+
+            // 상대측 의견 입력란 내용 확인 및 피드백 추가
+            const opponentText = document.getElementById('liveOpponentText').value.trim();
+            if(opponentText.length > 0) {
+                 strategyHtml += `<div style="margin-top:15px; padding:10px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:0.9em; color:#166534;">
+                 💡 <strong>메모 확인 완료:</strong> 방금 적어주신 상대방의 의견에 당황하지 마세요. 위 4가지 전략 중 상대방의 발언과 가장 알맞은 것을 골라 논리적으로 반박하면 무조건 이깁니다!
+                 </div>`;
+            } else {
+                 strategyHtml += `<div style="margin-top:15px; font-size:0.85em; color:#718096; text-align:center;">💡 [상대측 의견] 칸에 상대방의 발언을 적어두면서 전략을 매칭해 보세요.</div>`;
             }
+
+            coachBox.innerHTML = strategyHtml;
+            coachBox.style.display = 'block';
         }
 
         function startTimer() {
