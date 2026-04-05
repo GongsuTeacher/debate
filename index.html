@@ -39,6 +39,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             margin-top: 20px;
+            margin-bottom: 40px;
         }
 
         h1, h2, h3, h4 { margin-top: 0; }
@@ -114,6 +115,20 @@
         }
         .user-name { font-weight: bold; color: var(--primary); font-size: 1.1em; }
 
+        /* 둥둥 떠다니는 애니메이션 (로그인 화면용) */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating-icon {
+            font-size: 6em;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
+        }
+
         /* 화면 디자인 요소 */
         .category-buttons { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
         .cat-btn { background-color: white; border: 2px solid var(--primary); color: var(--primary); font-size: 1.05em; padding: 12px 20px; border-radius: 30px; }
@@ -153,19 +168,15 @@
 
         .ai-coach-box { display: none; background: #faf5ff; border: 1px solid #d6bcfa; padding: 15px; border-radius: 8px; margin-top: 15px; color: #553c9a; font-size: 0.95em; line-height: 1.5; }
 
-        /* 둥둥 떠다니는 애니메이션 (로그인 화면용) */
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-            100% { transform: translateY(0px); }
-        }
-        .floating-icon {
-            font-size: 6em;
-            margin-bottom: 20px;
-            display: inline-block;
-            animation: float 3s ease-in-out infinite;
-            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
-        }
+        /* 토론 기록 저장소 스타일 */
+        .history-section { margin-top: 50px; padding-top: 30px; border-top: 2px dashed #cbd5e1; }
+        .history-card { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .history-date { font-size: 0.85em; color: #64748b; margin-bottom: 8px; }
+        .history-topic { font-size: 1.15em; font-weight: bold; margin-bottom: 12px; color: #1e293b; }
+        .history-stance { display: inline-block; padding: 4px 10px; border-radius: 15px; font-size: 0.8em; color: white; margin-left: 10px; vertical-align: middle; }
+        .history-stance.pro { background-color: var(--pro-color); }
+        .history-stance.con { background-color: var(--con-color); }
+        .history-content { font-size: 0.95em; color: #334155; background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; line-height: 1.5; white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -190,7 +201,12 @@
         </div>
 
         <!-- ================= 화면 0: 로그인 화면 ================= -->
-        <div id="screenLogin" class="screen active text-center" style="padding: 60px 20px;">
+        <div id="screenLogin" class="screen active text-center" style="padding: 60px 20px; position: relative;">
+            <!-- 우측 하단 제작자 표시 추가 -->
+            <div style="position: absolute; bottom: 15px; right: 20px; font-size: 0.8em; color: #cbd5e1; font-weight: bold;">
+                제작자: 석현쌤
+            </div>
+
             <div class="floating-icon">🗣️</div>
             <h1 style="color: var(--primary); font-size: 2.5em; margin-bottom: 15px;">실전 토론 도우미</h1>
             <p style="color: #718096; font-size: 1.2em; line-height: 1.6; margin-bottom: 50px;">
@@ -230,6 +246,15 @@
 
             <div class="button-group">
                 <button class="btn-primary" onclick="goToStep2()" style="width: 100%; padding: 15px; font-size: 1.2em;">다음 단계로 이동 ➡️</button>
+            </div>
+
+            <!-- 🔥 새로 추가된 나의 토론 기록 저장소 표시 공간 🔥 -->
+            <div id="historyContainer" class="history-section" style="display: none;">
+                <h2 style="color: var(--primary); margin-bottom: 5px;">📚 나의 토론 기록</h2>
+                <p style="color: #64748b; font-size: 0.9em; margin-bottom: 20px;">내가 참여했던 토론 내용들이 이곳에 차곡차곡 저장됩니다.</p>
+                <div id="historyList">
+                    <!-- 자바스크립트를 통해 기록 카드들이 여기에 렌더링됩니다 -->
+                </div>
             </div>
         </div>
 
@@ -316,18 +341,18 @@
 
             <div class="button-group">
                 <button class="btn-secondary" onclick="resetApp()">주제 선택으로 돌아가기</button>
-                <button class="btn-danger" onclick="endDebate()">🛑 토론 종료하기</button>
+                <button class="btn-danger" onclick="endDebate()">🛑 토론 종료 및 기록 저장</button>
             </div>
         </div>
 
     </div>
 
-    <!-- ================= Firebase & 메인 스크립트 분리 ================= -->
-    
-    <!-- 1. Firebase 인증 모듈 스크립트 -->
+    <!-- ================= Firebase & 메인 스크립트 모듈 ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+        // 🔥 Firestore 임포트 추가
+        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB4qhh77_j_BJsSLrHzYOFii9_VWtbCwvU",
@@ -338,15 +363,19 @@
             appId: "1:185422397988:web:1792a814e9140cb9b2ceb1"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
+        
+        // 데이터가 저장될 프로젝트 ID 지정
+        const AppID = 'debate-helper-gongsu'; 
+        let historyUnsubscribe = null;
 
         document.getElementById('btnGoogleLogin').addEventListener('click', () => {
             signInWithPopup(auth, provider).catch((error) => {
                 console.error("로그인 에러:", error);
-                alert("로그인 중 문제가 발생했습니다. 다시 시도해 주세요.");
+                alert("로그인 중 문제가 발생했습니다.");
             });
         });
 
@@ -354,45 +383,86 @@
             signOut(auth).catch((error) => console.error("로그아웃 에러:", error));
         });
 
-        // 인증 상태 감지 (로그인 시 화면 전환)
+        // 인증 상태 감지
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // 로그인 성공
                 document.getElementById('userInfoBar').style.display = 'flex';
                 document.getElementById('userNameDisplay').innerText = `🎒 ${user.displayName} 님`;
+                window.hideLoginScreenAndStart();
                 
-                // 로그인 화면 숨기고 주제 선택 화면 띄우기
-                window.hideLoginScreenAndStart(); 
+                // 🔥 로그인 성공 시, Firestore에서 내 토론 기록 실시간 가져오기
+                const historyRef = collection(db, 'artifacts', AppID, 'users', user.uid, 'history');
+                
+                historyUnsubscribe = onSnapshot(historyRef, (snapshot) => {
+                    const historyList = [];
+                    snapshot.forEach(doc => historyList.push({ id: doc.id, ...doc.data() }));
+                    
+                    // 최신순 정렬 (자바스크립트 메모리 정렬)
+                    historyList.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    // 화면에 렌더링
+                    if(window.renderHistory) window.renderHistory(historyList);
+                }, (error) => {
+                    console.error("기록 가져오기 실패", error);
+                });
+
             } else {
-                // 로그아웃 상태
                 document.getElementById('userInfoBar').style.display = 'none';
                 window.showLoginScreen();
+                
+                // 로그아웃 시 리스너 해제
+                if (historyUnsubscribe) {
+                    historyUnsubscribe();
+                    historyUnsubscribe = null;
+                }
+                if(window.renderHistory) window.renderHistory([]); // 기록 지우기
             }
         });
+
+        // 🔥 실전 토론 종료 시 기록을 Firestore에 저장하는 전역 함수
+        window.saveDebateToCloud = async function(topic, stance, claimContent) {
+            const user = auth.currentUser;
+            if (!user || !topic) return;
+
+            const historyRef = collection(db, 'artifacts', AppID, 'users', user.uid, 'history');
+            
+            try {
+                await addDoc(historyRef, {
+                    topic: topic,
+                    stance: stance,
+                    content: claimContent,
+                    timestamp: Date.now(),
+                    dateString: new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                });
+                console.log("🔥 토론 기록 저장 완료!");
+            } catch (error) {
+                console.error("기록 저장 실패:", error);
+            }
+        };
     </script>
 
-    <!-- 2. 토론 앱 메인 로직 스크립트 -->
+    <!-- 3. 토론 앱 메인 로직 스크립트 -->
     <script>
-        // --- 커스텀 알림창(모달) 함수 ---
-        function showAlert(msg) {
+        // --- 모달 알림창 함수 ---
+        function showAlert(msg, onConfirm) {
             document.getElementById('modalMessage').innerText = msg;
             document.getElementById('modalBtnCancel').style.display = 'none';
             let btn = document.getElementById('modalBtnConfirm');
             btn.innerText = '확인';
-            btn.onclick = () => { document.getElementById('customModal').classList.remove('active'); };
+            btn.onclick = () => { 
+                document.getElementById('customModal').classList.remove('active'); 
+                if(onConfirm) onConfirm();
+            };
             document.getElementById('customModal').classList.add('active');
         }
 
         function showConfirm(msg, onConfirm) {
             document.getElementById('modalMessage').innerText = msg;
             document.getElementById('modalBtnCancel').style.display = 'inline-block';
-            
             let btnConfirm = document.getElementById('modalBtnConfirm');
             let btnCancel = document.getElementById('modalBtnCancel');
-            
             btnConfirm.innerText = '네, 할게요';
             btnCancel.innerText = '아니요';
-
             btnConfirm.onclick = () => {
                 document.getElementById('customModal').classList.remove('active');
                 if(onConfirm) onConfirm();
@@ -403,7 +473,7 @@
             document.getElementById('customModal').classList.add('active');
         }
 
-        // --- 정교화된 토론 데이터 ---
+        // --- 토론 데이터 ---
         const debateData = {
             "🏫 학교 생활": [
                 { topic: "학교폭력 가해 학생의 생활기록부 기록을 졸업 후에도 보존해야 한다.", pro_kw: ["재범 방지 효과", "피해자 보호 최우선", "강력한 경각심 부여", "학교폭력 근절", "사회적 책임 강화", "솜방망이 처벌 방지", "학교의 안전성 확보", "가해자 진심어린 반성 유도"], con_kw: ["낙인효과 우려", "반성과 교화 기회 박탈", "미성년자 인권 보호", "교육적 목적 위배", "이중 처벌 문제", "사회 복귀 원천 차단", "분노와 반발심 유발", "제도의 남용 가능성"] },
@@ -476,9 +546,9 @@
         let currentConKW = [];
         let timerInterval = null;
         let startTime = 0;
-        const apiKey = ""; // 생성형 AI 호출을 위한 API 키 (환경에서 자동 주입됨)
+        const apiKey = ""; 
 
-        // 외부(Firebase 스크립트)에서 호출할 수 있도록 글로벌 함수로 등록
+        // 글로벌 함수 연동부
         window.hideLoginScreenAndStart = function() {
             document.getElementById('screenLogin').classList.remove('active');
             renderCategories();
@@ -491,12 +561,35 @@
             window.scrollTo(0, 0);
         };
 
+        // 🔥 토론 기록 렌더링 함수
+        window.renderHistory = function(data) {
+            const container = document.getElementById('historyContainer');
+            const listDiv = document.getElementById('historyList');
+
+            if (!data || data.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            listDiv.innerHTML = '';
+
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'history-card';
+                card.innerHTML = `
+                    <div class="history-date">📅 ${item.dateString}</div>
+                    <div class="history-topic">${item.topic} <span class="history-stance ${item.stance === '찬성' ? 'pro' : 'con'}">${item.stance}</span></div>
+                    <div class="history-content">${item.content || '작성된 내용이 없습니다.'}</div>
+                `;
+                listDiv.appendChild(card);
+            });
+        };
+
         function renderCategories() {
             const catContainer = document.getElementById('categoryButtons');
             catContainer.innerHTML = "";
-            const categories = Object.keys(debateData);
-            
-            categories.forEach(cat => {
+            Object.keys(debateData).forEach(cat => {
                 const btn = document.createElement('button');
                 btn.className = 'cat-btn';
                 btn.innerText = cat;
@@ -508,19 +601,13 @@
         function loadTopics(category, btn) {
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            const container = document.getElementById('topicsContainer');
             const list = document.getElementById('topicList');
-            const title = document.getElementById('selectedCategoryTitle');
-            
             list.innerHTML = "";
-            title.innerText = `📋 [${category}] 토론 주제 목록`;
-            container.style.display = "block";
-            
+            document.getElementById('selectedCategoryTitle').innerText = `📋 [${category}] 토론 주제 목록`;
+            document.getElementById('topicsContainer').style.display = "block";
             document.getElementById('customTopicInput').value = ""; 
 
-            const topics = debateData[category];
-            topics.forEach(t => {
+            debateData[category].forEach(t => {
                 const tBtn = document.createElement('button');
                 tBtn.className = 'topic-btn';
                 tBtn.innerText = t.topic;
@@ -533,7 +620,6 @@
             document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
             document.getElementById('customTopicInput').value = "";
-            
             currentTopic = topicObj.topic;
             currentProKW = topicObj.pro_kw;
             currentConKW = topicObj.con_kw;
@@ -558,12 +644,10 @@
                 clearTopicSelection(); 
                 currentTopic = customInput;
             }
-
             if (!currentTopic) {
                 showAlert("위에 있는 목록에서 주제를 고르거나 직접 입력 칸에 적어주세요!");
                 return;
             }
-
             document.getElementById('displayTopicStep2').innerText = "📢 " + currentTopic;
             showScreen('screen2');
         }
@@ -571,27 +655,20 @@
         function goToStep3() {
             const isPro = document.getElementById('stancePro').checked;
             const isCon = document.getElementById('stanceCon').checked;
-
             if (!isPro && !isCon) {
                 showAlert("찬성 또는 반대 입장을 먼저 선택해야 다음으로 넘어갈 수 있습니다.");
                 return;
             }
-
             document.getElementById('displayTopicStep3').innerText = "📢 " + currentTopic;
             const stanceStr = isPro ? "⭕ 찬성" : "❌ 반대";
             const badgeColor = isPro ? "var(--pro-color)" : "var(--con-color)";
-            
             document.getElementById('step3BadgeArea').innerHTML = `<span class="badge" style="background-color:${badgeColor}; font-size:1.1em; padding:8px 20px;">나의 입장 : ${stanceStr}</span>`;
 
             const myKwArr = isPro ? currentProKW : currentConKW;
             const oppKwArr = isPro ? currentConKW : currentProKW;
 
-            const myKwHtml = myKwArr.map(k => `<span class="keyword">#${k}</span>`).join(" ");
-            const oppKwHtml = oppKwArr.map(k => `<span class="opp-keyword">#${k}</span>`).join(" ");
-
-            document.getElementById('myHintBox').innerHTML = `<strong>💡 [활용하기 좋은 핵심 단어 힌트]</strong><br><br>${myKwHtml}`;
-            document.getElementById('opponentBox').innerHTML = `<strong>🛡️ [상대방이 사용할 것으로 예상되는 단어들]</strong><br><br>${oppKwHtml}<br><br><span style="color:#e53e3e; font-size:0.9em;">👉 상대방은 이 단어들로 나를 공격할 것입니다. 내 근거를 적을 때 어떻게 방어할지 미리 적어두면 완벽합니다!</span>`;
-            
+            document.getElementById('myHintBox').innerHTML = `<strong>💡 [활용하기 좋은 핵심 단어 힌트]</strong><br><br>${myKwArr.map(k => `<span class="keyword">#${k}</span>`).join(" ")}`;
+            document.getElementById('opponentBox').innerHTML = `<strong>🛡️ [상대방이 사용할 것으로 예상되는 단어들]</strong><br><br>${oppKwArr.map(k => `<span class="opp-keyword">#${k}</span>`).join(" ")}<br><br><span style="color:#e53e3e; font-size:0.9em;">👉 상대방은 이 단어들로 나를 공격할 것입니다. 방어 논리를 미리 생각해보세요!</span>`;
             document.getElementById('opponentBox').style.display = 'none';
             showScreen('screen3');
         }
@@ -604,11 +681,8 @@
         function goToStep4() {
             const claim = document.getElementById('myClaim').value.trim();
             const evidence = document.getElementById('myEvidence').value.trim();
-
             if (!claim && !evidence) {
-                showConfirm("주장과 근거를 하나도 적지 않았습니다.\n이대로 실전 토론장에 들어갈까요?", () => {
-                    executeStep4Move(claim, evidence);
-                });
+                showConfirm("주장과 근거를 하나도 적지 않았습니다.\n이대로 실전 토론장에 들어갈까요?", () => executeStep4Move(claim, evidence));
             } else {
                 executeStep4Move(claim, evidence);
             }
@@ -616,17 +690,13 @@
 
         function executeStep4Move(claim, evidence) {
             document.getElementById('displayTopicStep4').innerText = "📢 " + currentTopic;
-            
             const isPro = document.getElementById('stancePro').checked;
             const badgeColor = isPro ? "var(--pro-color)" : "var(--con-color)";
             const stanceStr = isPro ? "찬성" : "반대";
-            
             document.getElementById('savedStanceBadgeStep4').innerHTML = `<div class="badge" style="background-color: ${badgeColor};">나의 입장 : ⭕ ${stanceStr}</div>`;
             
             let combinedClaim = claim;
-            if (evidence) {
-                combinedClaim += "\n\n[내가 준비한 상세 근거]\n" + evidence;
-            }
+            if (evidence) combinedClaim += "\n\n[내가 준비한 상세 근거]\n" + evidence;
             
             document.getElementById('liveClaim').value = combinedClaim;
             document.getElementById('liveOpponentText').value = ""; 
@@ -637,11 +707,9 @@
         }
 
         function searchGoogle() {
-            const query = encodeURIComponent(`"${currentTopic}" 토론 근거`);
-            window.open(`https://www.google.com/search?q=${query}`, '_blank');
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(`"${currentTopic}" 토론 근거`)}`, '_blank');
         }
 
-        // AI API 재시도 로직
         async function fetchWithRetry(url, prompt, retries = 5) {
             const delays = [1000, 2000, 4000, 8000, 16000];
             const payload = {
@@ -651,11 +719,7 @@
 
             for (let i = 0; i < retries; i++) {
                 try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     if (!response.ok) throw new Error('API Request Failed');
                     const data = await response.json();
                     return data.candidates[0].content.parts[0].text;
@@ -681,14 +745,13 @@
             coachBox.style.display = 'block';
 
             const prompt = `토론 주제: "${currentTopic}"\n학생의 입장: "${stanceStr}"\n학생의 현재 주장: "${myClaim}"\n상대방이 방금 한 주장: "${opponentText}"\n\n위 내용을 바탕으로, 상대방의 주장을 논리적으로 반박할 수 있는 방법과 학생의 주장을 효과적으로 방어할 수 있는 전략(날카로운 질문, 좋은 예시 등)을 초등학생 눈높이에 맞게 3~4문장으로 핵심만 짚어서 친절하게 조언해 주세요.`;
-
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             try {
                 const responseText = await fetchWithRetry(url, prompt);
                 coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br>${responseText.replace(/\n/g, '<br>')}`;
             } catch (error) {
-                coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br>앗, 코칭을 불러오는데 실패했어요. 인터넷 연결을 확인하고 다시 눌러주세요.`;
+                coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br>앗, 코칭을 불러오는데 실패했어요. 인터넷 연결을 확인하고 다시 시도해주세요.`;
             }
         }
 
@@ -696,13 +759,11 @@
             stopTimer();
             document.getElementById('timerDisplay').innerText = "00:00";
             startTime = Date.now();
-            
             timerInterval = setInterval(() => {
                 const diff = Date.now() - startTime;
                 const minutes = Math.floor(diff / 60000);
                 const seconds = Math.floor((diff % 60000) / 1000);
-                document.getElementById('timerDisplay').innerText = 
-                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                document.getElementById('timerDisplay').innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             }, 1000);
         }
 
@@ -711,13 +772,9 @@
         }
 
         function resetApp() {
-            showConfirm("정말 주제 선택으로 돌아갈까요?\n작성하신 모든 내용이 사라집니다.", () => {
+            showConfirm("정말 주제 선택으로 돌아갈까요?\n작성하신 모든 내용이 초기화됩니다.", () => {
                 stopTimer();
-                
                 currentTopic = "";
-                currentProKW = [];
-                currentConKW = [];
-                
                 document.getElementById('customTopicInput').value = "";
                 document.getElementById('stancePro').checked = false;
                 document.getElementById('stanceCon').checked = false;
@@ -726,26 +783,43 @@
                 document.getElementById('liveClaim').value = "";
                 document.getElementById('liveOpponentText').value = "";
                 document.querySelector('.debate-room textarea').value = ""; 
-                
                 document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('selected'));
                 document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
                 document.getElementById('topicsContainer').style.display = 'none';
-
                 showScreen('screen1');
             });
         }
 
+        // 🔥 토론 종료 시 클라우드 저장 트리거 🔥
         function endDebate() {
             stopTimer();
             const finalTime = document.getElementById('timerDisplay').innerText;
-            showAlert(`🎉 토론이 끝났습니다!\n🔥 치열한 토론 진행 시간: ${finalTime}\n\n서로의 의견을 존중하며 발표한 우리 반 친구들 모두 고생했습니다!`);
+            const finalClaim = document.getElementById('liveClaim').value.trim();
+            const stance = document.getElementById('stancePro').checked ? "찬성" : "반대";
             
-            setTimeout(() => {
-                 currentTopic = "";
-                 showScreen('screen1');
-            }, 1000);
+            showAlert(`🎉 토론이 끝났습니다!\n🔥 치열한 토론 진행 시간: ${finalTime}\n\n작성하신 내용은 나의 토론 기록에 자동 저장됩니다!`, () => {
+                // 클라우드 저장 (모듈에 선언된 함수 호출)
+                if(window.saveDebateToCloud && currentTopic) {
+                    window.saveDebateToCloud(currentTopic, stance, finalClaim);
+                }
+                
+                // 화면 초기화 및 1단계로 이동
+                currentTopic = "";
+                document.getElementById('customTopicInput').value = "";
+                document.getElementById('stancePro').checked = false;
+                document.getElementById('stanceCon').checked = false;
+                document.getElementById('myClaim').value = "";
+                document.getElementById('myEvidence').value = "";
+                document.getElementById('liveClaim').value = "";
+                document.getElementById('liveOpponentText').value = "";
+                document.querySelector('.debate-room textarea').value = ""; 
+                document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('selected'));
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('topicsContainer').style.display = 'none';
+                
+                showScreen('screen1');
+            });
         }
-
     </script>
 </body>
 </html>
