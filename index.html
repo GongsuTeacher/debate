@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리 반 토론 도우미</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+        
+        :root {
+            --primary: #4a90e2;
+            --primary-hover: #357abd;
+            --bg-color: #f0f4f8;
+            --box-bg: #ffffff;
+            --text-main: #2d3748;
+            --border-color: #e2e8f0;
+            --pro-color: #38a169;
+            --con-color: #e53e3e;
+            --coach-color: #805ad5;
+        }
+
+        body {
+            font-family: 'Gowun Dodum', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--box-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-top: 20px;
+        }
+
+        h1, h2, h3, h4 { margin-top: 0; }
+        .text-center { text-align: center; }
+        
+        /* 버튼 공통 */
+        button {
+            font-family: 'Gowun Dodum', sans-serif;
+            padding: 12px 24px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: #e2e8f0; color: #4a5568; }
+        .btn-secondary:hover { background-color: #cbd5e0; }
+        .btn-danger { background-color: #f56565; color: white; }
+        .btn-danger:hover { background-color: #e53e3e; }
+        .btn-coach { background-color: var(--coach-color); color: white; width: 100%; margin-top: 15px; }
+        .btn-coach:hover { background-color: #6b46c1; }
+        .btn-back { background-color: #cbd5e1; color: #334155; }
+        .btn-back:hover { background-color: #94a3b8; color: white; }
+        .btn-google {
+            background-color: white; color: #444; border: 1px solid #ccc;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 15px 30px; font-size: 1.2em; border-radius: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-google:hover { background-color: #f8f9fa; border-color: #aaa; }
+        
+        .button-group { display: flex; gap: 15px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+
+        /* 입력 폼 */
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            outline: none;
+            font-family: 'Gowun Dodum', sans-serif;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            background-color: #f7fafc;
+        }
+        input[type="text"]:focus, textarea:focus { border-color: var(--primary); background-color: #fff; }
+        textarea { resize: vertical; min-height: 120px; }
+
+        /* 화면 전환 */
+        .screen { display: none; animation: fadeIn 0.4s ease; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 자체 알림창(모달) 스타일 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 9999;
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 15px; text-align: center;
+            max-width: 400px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .modal-message { font-size: 1.2em; margin-bottom: 25px; line-height: 1.5; white-space: pre-line; }
+
+        /* 사용자 정보 바 */
+        .user-info-bar {
+            display: none; justify-content: flex-end; align-items: center; gap: 15px;
+            padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px;
+        }
+        .user-name { font-weight: bold; color: var(--primary); font-size: 1.1em; }
+
+        /* 화면 디자인 요소 */
+        .category-buttons { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .cat-btn { background-color: white; border: 2px solid var(--primary); color: var(--primary); font-size: 1.05em; padding: 12px 20px; border-radius: 30px; }
+        .cat-btn:hover, .cat-btn.active { background-color: var(--primary); color: white; }
+        
+        .topic-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        @media (max-width: 768px) { .topic-list { grid-template-columns: 1fr; } }
+        .topic-btn { background-color: #f8fafc; color: #4a5568; border: 1px solid var(--border-color); text-align: left; padding: 15px; line-height: 1.4; }
+        .topic-btn:hover { background-color: #edf2f7; }
+        .topic-btn.selected { background-color: #ebf8ff; border-color: var(--primary); color: #2b6cb0; box-shadow: 0 0 0 1px var(--primary); font-weight:bold; }
+        
+        #topicsContainer { display: none; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 25px; }
+        .custom-topic-box { background-color: #f0fdf4; border: 2px dashed #86efac; padding: 20px; border-radius: 12px; margin-top: 20px; }
+
+        .stance-selector { display: flex; gap: 20px; margin-bottom: 30px; justify-content: center; margin-top: 40px; }
+        .stance-radio { display: none; }
+        .stance-label { padding: 20px 50px; border: 3px solid var(--border-color); border-radius: 15px; font-size: 1.5em; cursor: pointer; transition: all 0.2s; background-color: white; font-weight: bold; color: #a0aec0; text-align: center; width: 40%; }
+        .stance-label:hover { background-color: #f7fafc; }
+        #stancePro:checked + .stance-label { background-color: var(--pro-color); color: white; border-color: var(--pro-color); box-shadow: 0 8px 15px rgba(56, 161, 105, 0.3); transform: translateY(-3px); }
+        #stanceCon:checked + .stance-label { background-color: var(--con-color); color: white; border-color: var(--con-color); box-shadow: 0 8px 15px rgba(229, 62, 62, 0.3); transform: translateY(-3px); }
+
+        .hint-box { background-color: #fffff0; border-left: 5px solid #ecc94b; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px; font-size: 0.95em; line-height: 1.8; }
+        .keyword { display: inline-block; background: #fefcbf; color: #b7791f; padding: 5px 12px; border-radius: 20px; font-weight: bold; margin: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        .opponent-box { display: none; background-color: #fff5f5; border: 1px dashed #fc8181; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95em; }
+        .opp-keyword { display: inline-block; background: #fed7d7; color: #c53030; padding: 5px 12px; border-radius: 20px; font-weight: bold; margin: 3px; }
+        
+        .debate-room { display: grid; grid-template-columns: 1fr 1.3fr; gap: 25px; margin-top: 20px; }
+        @media (max-width: 768px) { .debate-room { grid-template-columns: 1fr; } }
+        .panel { background: #fff; border: 1px solid var(--border-color); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        
+        .timer-box { text-align: center; background: #1a202c; color: #48bb78; font-size: 3.5em; font-family: monospace; padding: 20px; border-radius: 12px; margin-bottom: 20px; position: relative; }
+        .timer-label { font-size: 0.25em; color: #a0aec0; position: absolute; top: 10px; left: 15px; font-family: 'Gowun Dodum', sans-serif; }
+        
+        .topic-header { background: #2d3748; color: white; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 25px; font-size: 1.2em; font-weight: bold; }
+        .badge { display: inline-block; padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; font-size: 0.9em; margin-bottom: 10px; }
+
+        .ai-coach-box { display: none; background: #faf5ff; border: 1px solid #d6bcfa; padding: 15px; border-radius: 8px; margin-top: 15px; color: #553c9a; font-size: 0.95em; line-height: 1.5; }
+
+        /* 둥둥 떠다니는 애니메이션 (로그인 화면용) */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating-icon {
+            font-size: 6em;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 에러 방지용 자체 모달 팝업창 -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modalMessage" class="modal-message">알림 메시지</div>
+            <div class="button-group" style="margin-top: 10px;">
+                <button id="modalBtnCancel" class="btn-secondary" style="display: none;">취소</button>
+                <button id="modalBtnConfirm" class="btn-primary">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- 상단 로그인 사용자 정보 (로그인 시 표시) -->
+        <div id="userInfoBar" class="user-info-bar">
+            <span class="user-name" id="userNameDisplay">사용자 님</span>
+            <button id="btnLogout" class="btn-secondary" style="padding: 8px 15px; font-size: 0.9em; border-radius: 20px;">로그아웃</button>
+        </div>
+
+        <!-- ================= 화면 0: 로그인 화면 ================= -->
+        <div id="screenLogin" class="screen active text-center" style="padding: 60px 20px;">
+            <div class="floating-icon">🗣️</div>
+            <h1 style="color: var(--primary); font-size: 2.5em; margin-bottom: 15px;">실전 토론 도우미</h1>
+            <p style="color: #718096; font-size: 1.2em; line-height: 1.6; margin-bottom: 50px;">
+                실제 토론 중에 어떻게 반박해야 할지 막막한가요?<br>
+                여러분이 논리적인 주장을 펼치고 상대방의 허점을 찌를 수 있도록<br>
+                <strong>실시간으로 전략을 코치해 주는 든든한 지원군</strong>입니다!
+            </p>
+            
+            <div style="display: flex; justify-content: center;">
+                <button id="btnGoogleLogin" class="btn-google">
+                    <!-- 구글 로고 SVG -->
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 48 48" class="abcRioButtonSvg">
+                        <g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g>
+                    </svg>
+                    구글로 로그인하기
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= 화면 1: 주제 선택 ================= -->
+        <div id="screen1" class="screen">
+            <h1 class="text-center">🗣️ 토론 주제 결정</h1>
+            <p class="text-center" style="color: #718096; margin-bottom: 20px;">어떤 분야의 토론을 해볼까요? 아래에서 선택하거나 직접 입력해 주세요.</p>
+
+            <div class="category-buttons" id="categoryButtons"></div>
+
+            <div id="topicsContainer">
+                <h3 id="selectedCategoryTitle" style="color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom:10px;">주제 목록</h3>
+                <div class="topic-list" id="topicList"></div>
+            </div>
+
+            <div class="custom-topic-box">
+                <h3 style="margin-top: 0; color: #166534;">✍️ 토론 주제 직접 입력하기</h3>
+                <p style="font-size: 0.9em; color: #15803d; margin-bottom: 10px;">원하는 주제가 없다면 선생님이 주신 주제나 우리 반만의 주제를 적어주세요.</p>
+                <input type="text" id="customTopicInput" placeholder="예: 급식 시간에 좋아하는 반찬을 더 받을 수 있게 해야 한다." onfocus="clearTopicSelection()">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="goToStep2()" style="width: 100%; padding: 15px; font-size: 1.2em;">다음 단계로 이동 ➡️</button>
+            </div>
+        </div>
+
+        <!-- ================= 화면 2: 나의 입장 선택 ================= -->
+        <div id="screen2" class="screen">
+            <h1 class="text-center">⚖️ 나의 입장 선택하기</h1>
+            <p class="text-center" style="color: #718096; margin-bottom: 30px;">선택한 토론 주제에 대해 찬성하나요, 반대하나요?</p>
+            
+            <div class="topic-header" id="displayTopicStep2">주제: </div>
+
+            <div class="stance-selector">
+                <input type="radio" name="stance" id="stancePro" value="찬성" class="stance-radio">
+                <label for="stancePro" class="stance-label">⭕<br>찬성합니다</label>
+                
+                <input type="radio" name="stance" id="stanceCon" value="반대" class="stance-radio">
+                <label for="stanceCon" class="stance-label">❌<br>반대합니다</label>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-back" onclick="showScreen('screen1')">⬅️ 이전으로</button>
+                <button class="btn-secondary" onclick="resetApp()">주제 다시 고르기</button>
+                <button class="btn-primary" onclick="goToStep3()">나의 주장 정리하기 ➡️</button>
+            </div>
+        </div>
+
+        <!-- ================= 화면 3: 주장과 근거 정리 ================= -->
+        <div id="screen3" class="screen">
+            <h1 class="text-center">🤔 주장과 근거 정리하기</h1>
+            <div class="topic-header" id="displayTopicStep3">주제: </div>
+            <div id="step3BadgeArea" class="text-center" style="margin-bottom: 20px;"></div>
+
+            <label for="myClaim"><strong>나의 핵심 주장</strong></label>
+            <input type="text" id="myClaim" placeholder="예: 저는 위 주제에 대해 찬성(반대)합니다. 왜냐하면 ~하기 때문입니다.">
+
+            <label for="myEvidence"><strong>자세한 부연 설명 및 근거</strong></label>
+            
+            <!-- 뉴스 키워드 힌트 박스 -->
+            <div class="hint-box" id="myHintBox"></div>
+
+            <textarea id="myEvidence" placeholder="위 키워드들을 활용하여 내 주장을 뒷받침할 구체적인 이유나 예시를 적어보세요."></textarea>
+
+            <button class="btn-secondary" style="width: 100%; margin-bottom: 10px;" onclick="toggleOpponent()">🛡️ 상대방은 어떤 주장을 할까? (미리보기)</button>
+            <div class="opponent-box" id="opponentBox"></div>
+
+            <div class="button-group">
+                <button class="btn-back" onclick="showScreen('screen2')">⬅️ 이전으로</button>
+                <button class="btn-secondary" onclick="resetApp()">주제 다시 고르기</button>
+                <button class="btn-primary" onclick="goToStep4()">⚔️ 실전 토론장 입장</button>
+            </div>
+        </div>
+
+        <!-- ================= 화면 4: 실전 토론장 ================= -->
+        <div id="screen4" class="screen">
+            <h1 class="text-center" style="color: #e53e3e;">🔥 실전 토론장</h1>
+            <div class="topic-header" id="displayTopicStep4" style="background: #2b6cb0;">주제: </div>
+
+            <div class="debate-room">
+                <div class="panel">
+                    <h3 style="margin-bottom: 15px;">⏱️ 진행 시간</h3>
+                    <div class="timer-box">
+                        <span class="timer-label">타임라인</span>
+                        <span id="timerDisplay">00:00</span>
+                    </div>
+                    <h3 style="margin-top: 10px;">📝 반박 노트 (메모장)</h3>
+                    <textarea placeholder="상대방의 이야기를 주의 깊게 듣고, 모순되는 부분이나 반박할 질문을 메모하세요." style="flex-grow: 1; min-height: 200px; background-color: #fff9c4; border-color: #f6e05e;"></textarea>
+                </div>
+
+                <div class="panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">💡 나의 의견</h3>
+                        <button class="btn-secondary" style="padding: 6px 12px; font-size: 0.8em; background-color: #edf2f7;" onclick="searchGoogle()">🔍 구글 검색</button>
+                    </div>
+                    <div id="savedStanceBadgeStep4"></div>
+                    <label style="font-size: 0.9em; font-weight: bold; color: #4a5568;">[나의 주장]</label>
+                    <textarea id="liveClaim" style="min-height: 120px; margin-bottom: 10px; font-weight:bold;"></textarea>
+                    
+                    <label style="font-size: 0.9em; font-weight: bold; color: #e53e3e;">[상대측 의견]</label>
+                    <textarea id="liveOpponentText" style="flex-grow: 1; min-height: 120px; background-color: #fff5f5; border-color: #feb2b2;" placeholder="상대방이 방금 제기한 의견이나 반박을 여기에 적어보세요."></textarea>
+
+                    <button class="btn-coach" onclick="getCoaching()">🤖 토론 전략 코칭</button>
+                    <div class="ai-coach-box" id="aiCoachBox"></div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-secondary" onclick="resetApp()">주제 선택으로 돌아가기</button>
+                <button class="btn-danger" onclick="endDebate()">🛑 토론 종료하기</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= Firebase & 메인 스크립트 분리 ================= -->
+    
+    <!-- 1. Firebase 인증 모듈 스크립트 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4qhh77_j_BJsSLrHzYOFii9_VWtbCwvU",
+            authDomain: "debate-aea5c.firebaseapp.com",
+            projectId: "debate-aea5c",
+            storageBucket: "debate-aea5c.firebasestorage.app",
+            messagingSenderId: "185422397988",
+            appId: "1:185422397988:web:1792a814e9140cb9b2ceb1"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        document.getElementById('btnGoogleLogin').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch((error) => {
+                console.error("로그인 에러:", error);
+                alert("로그인 중 문제가 발생했습니다. 다시 시도해 주세요.");
+            });
+        });
+
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            signOut(auth).catch((error) => console.error("로그아웃 에러:", error));
+        });
+
+        // 인증 상태 감지 (로그인 시 화면 전환)
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // 로그인 성공
+                document.getElementById('userInfoBar').style.display = 'flex';
+                document.getElementById('userNameDisplay').innerText = `🎒 ${user.displayName} 님`;
+                
+                // 로그인 화면 숨기고 주제 선택 화면 띄우기
+                window.hideLoginScreenAndStart(); 
+            } else {
+                // 로그아웃 상태
+                document.getElementById('userInfoBar').style.display = 'none';
+                window.showLoginScreen();
+            }
+        });
+    </script>
+
+    <!-- 2. 토론 앱 메인 로직 스크립트 -->
+    <script>
+        // --- 커스텀 알림창(모달) 함수 ---
+        function showAlert(msg) {
+            document.getElementById('modalMessage').innerText = msg;
+            document.getElementById('modalBtnCancel').style.display = 'none';
+            let btn = document.getElementById('modalBtnConfirm');
+            btn.innerText = '확인';
+            btn.onclick = () => { document.getElementById('customModal').classList.remove('active'); };
+            document.getElementById('customModal').classList.add('active');
+        }
+
+        function showConfirm(msg, onConfirm) {
+            document.getElementById('modalMessage').innerText = msg;
+            document.getElementById('modalBtnCancel').style.display = 'inline-block';
+            
+            let btnConfirm = document.getElementById('modalBtnConfirm');
+            let btnCancel = document.getElementById('modalBtnCancel');
+            
+            btnConfirm.innerText = '네, 할게요';
+            btnCancel.innerText = '아니요';
+
+            btnConfirm.onclick = () => {
+                document.getElementById('customModal').classList.remove('active');
+                if(onConfirm) onConfirm();
+            };
+            btnCancel.onclick = () => {
+                document.getElementById('customModal').classList.remove('active');
+            };
+            document.getElementById('customModal').classList.add('active');
+        }
+
+        // --- 정교화된 토론 데이터 ---
+        const debateData = {
+            "🏫 학교 생활": [
+                { topic: "학교폭력 가해 학생의 생활기록부 기록을 졸업 후에도 보존해야 한다.", pro_kw: ["재범 방지 효과", "피해자 보호 최우선", "강력한 경각심 부여", "학교폭력 근절", "사회적 책임 강화", "솜방망이 처벌 방지", "학교의 안전성 확보", "가해자 진심어린 반성 유도"], con_kw: ["낙인효과 우려", "반성과 교화 기회 박탈", "미성년자 인권 보호", "교육적 목적 위배", "이중 처벌 문제", "사회 복귀 원천 차단", "분노와 반발심 유발", "제도의 남용 가능성"] },
+                { topic: "학교에서 학생의 스마트폰 소지 및 사용을 제한해야 한다.", pro_kw: ["수업 집중력 향상", "사이버 따돌림 예방", "대면 대화 증가", "학습권 보장", "눈 건강 보호", "수면 부족 해결", "유해 콘텐츠 차단", "건전한 교우관계 형성"], con_kw: ["자기 통제권 침해", "비상 연락망 필수", "정보 검색 권리", "디지털 기기 활용 능력", "규제보다 교육 우선", "스트레스 해소 수단", "과도한 사생활 간섭", "음성적 사용 부작용"] },
+                { topic: "초등학생의 색조 화장을 교칙으로 허용해야 한다.", pro_kw: ["개성 표현의 자유", "스트레스 해소", "올바른 세안법 교육 기회", "음성적 화장 방지", "자기 만족감", "또래 문화 존중", "유튜브 등 미디어 영향 인정", "안전한 화장품 선택 교육"], con_kw: ["피부 건강 악화", "외모 지상주의 조장", "학업 집중도 저하", "경제적 위화감", "성인 문화 맹목적 모방", "시간 낭비", "화장품 구매 비용 부담", "학생다운 단정함 훼손"] },
+                { topic: "초등학교 학급 임원 제도(반장/부반장)를 폐지해야 한다.", pro_kw: ["소수 권력 독점 방지", "서열화 부작용 해소", "모두가 리더 되는 기회", "참여형 학급 운영", "민주적 의사결정", "소외되는 학생 방지", "자율성 확대", "경쟁 없는 평등한 교실"], con_kw: ["민주 선거 경험", "책임감 있는 리더십 훈련", "학급 운영의 효율성", "위기 상황 대처", "봉사 정신 함양", "선생님과의 소통 창구", "동기 부여", "사회 생활의 축소판 경험"] },
+                { topic: "초등학생의 방학 숙제를 없애야 한다.", pro_kw: ["진정한 휴식권 보장", "자기주도적 시간 활용", "부모님 숙제화 방지", "다양한 체험 활동 시간", "형식적 과제 탈피", "학업 스트레스 해소", "창의성 발달의 기회", "가족과의 유대감 강화"], con_kw: ["기초 학력 유지", "규칙적 생활 습관 유지", "학습 결손 방지", "최소한의 복습 필요", "시간 관리 능력 배양", "새 학기 적응 도움", "나태함 예방", "스마트폰 과몰입 방지"] },
+                { topic: "교실 내 CCTV 설치를 의무화해야 한다.", pro_kw: ["학교폭력 명확한 증거", "안전사고 신속 대처", "도난 방지 효과", "사각지대 해소", "예방 효과 우수", "학생의 안전 보장", "교사의 억울한 오해 해소", "객관적 사실 확인"], con_kw: ["사생활 심각한 침해", "감시 스트레스", "교사와 학생 간 신뢰 파괴", "인권 침해 요소", "정보 유출 위험", "자유로운 표현 위축", "학교의 교도소화", "해킹 위험성"] }
+            ],
+            "🌍 사회 및 환경": [
+                { topic: "동물원은 멸종 위기종 보호를 위해 유지해야 한다.", pro_kw: ["종 보존 및 연구", "생태 교육의 장", "자연 방사 불가 동물 보호", "수의학 발전 기여", "안전한 서식지 제공", "야생동물 밀렵 방지", "생물 다양성 유지", "아이들의 자연 친화력"], con_kw: ["동물권 심각한 침해", "콘크리트 우리 스트레스", "전시 위주 상업성", "정형행동(이상행동) 유발", "자연스러운 생태 파괴", "인간의 이기심", "자연 수명 단축", "동물의 구경거리 전락"] },
+                { topic: "인간의 질병 치료를 위한 동물 실험은 유지해야 한다.", pro_kw: ["신약 개발 필수 과정", "인간 생명 연장 기여", "안전성 확인 불가피", "백신 개발 성과", "생명 공학 발전", "질병의 원인 규명", "대체 실험의 불완전성", "희귀병 치료 희망"], con_kw: ["동물 생명권 유린", "인간과 동물의 유전적 차이", "부작용 예측 한계", "대체 실험 기술(세포배양) 발전", "비윤리적 고통 부여", "동물 학대", "불필요한 중복 실험", "인공지능 시뮬레이션 가능"] },
+                { topic: "식당이나 카페의 노키즈존(어린이 출입 제한 구역)은 필요하다.", pro_kw: ["영업의 자유 보장", "안전사고 예방 책임", "다른 손님의 조용한 휴식권", "파손 방지", "사업주 보호", "고객의 선택권 존중", "직원들의 스트레스 감소", "특정 분위기 유지"], con_kw: ["아동에 대한 명백한 차별", "양육자의 권리 침해", "관용 없는 사회 분위기", "예절 교육 기회 박탈", "저출산 문제 심화", "일부의 잘못을 전체로 확대", "가족 친화적 환경 파괴", "어린이의 기본권 제약"] },
+                { topic: "길고양이에게 먹이를 주는 행위를 법으로 허용해야 한다.", pro_kw: ["생명 존중 실천", "배고픔 해결로 쓰레기 훼손 방지", "개체 수 조절(TNR) 도움", "생태계 공존", "인도적 보호", "동물 학대 예방", "이웃 간 나눔의 가치", "동물 복지 향상"], con_kw: ["소음 피해 심각", "배설물 위생 문제", "생태계 교란(새 사냥)", "이웃 간 심각한 갈등 유발", "개체 수 급증 우려", "차량 파손 등 재산 피해", "질병 전파 위험", "주민의 생활권 침해"] },
+                { topic: "위험에 처한 사람을 돕지 않으면 처벌하는 법(착한 사마리아인 법)이 필요하다.", pro_kw: ["공동체 의식 회복", "골든타임 인명 구조", "최소한의 도덕적 의무", "방관자 효과 방지", "생명 존중 사회", "시민의 안전망 구축", "억울한 희생자 예방", "선진국형 법률 도입"], con_kw: ["도덕의 법제화 위험", "선의가 피해로 돌아올 수 있음", "처벌 기준의 모호성", "개인의 자유 침해", "억울한 범죄자 양산", "전문 지식 부족 시 오히려 위험", "소송 남발 우려", "자발적 선행의 가치 하락"] },
+                { topic: "어린이 보호구역 내 차량 통행을 제한해야 한다.", pro_kw: ["어린이 교통사고 원천 차단", "안전한 통학로 보장", "보행자 중심 교통 문화", "안심 등하교", "생명권 최우선", "매연 감소로 건강 보호", "보행자 우선 인식 강화", "교통 약자 보호"], con_kw: ["주민 생활권 심각한 침해", "긴급 차량 출동 지연 우려", "우회로 인한 주변 교통 대란", "배달 및 상권 피해", "현실성 부족", "물류 이동 제한", "주차 공간 확보 어려움", "단속 인력 낭비"] }
+            ],
+            "💻 기술 및 미디어": [
+                { topic: "초등학생의 유튜브 방송 채널 운영을 장려해야 한다.", pro_kw: ["영상 기획 및 편집력 향상", "미래 진로 탐색", "자신감 및 표현력 증대", "디지털 소통 능력", "창의성 발달", "정보 검색 능력 강화", "대중 앞 말하기 훈련", "새로운 재능 발견"], con_kw: ["악플로 인한 정신적 상처", "자극적 콘텐츠 모방 위험", "학업 소홀", "수면 부족 우려", "개인 정보 유출", "사생활 노출 위험", "범죄의 표적 위험", "가짜 뉴스 생산 우려"] },
+                { topic: "인공지능(AI)이 그린 그림도 미술 대회에서 예술 작품으로 인정해야 한다.", pro_kw: ["상상력 표현의 새로운 도구", "아이디어의 가치 강조", "예술의 경계 확장", "누구나 예술가 가능", "기술 융합 예술", "작업 속도 혁신", "다양한 화풍 융합", "미래 예술의 트렌"], con_kw: ["인간의 노력 결여", "기존 작품 무단 학습", "저작권 위반 문제", "예술의 본질 훼손", "창작의 고통 부재", "화가의 생존권 위협", "독창성 상실", "알고리즘의 한계"] },
+                { topic: "청소년의 심야 시간 게임 이용을 법으로 제한해야 한다.", pro_kw: ["수면권 보장", "성장기 건강 보호", "다음날 수업 집중도 향상", "게임 중독 예방", "규칙적 생활 습관", "신체 발달 저해 방지", "정서적 불안 해소", "시력 보호 효과"], con_kw: ["국가 통제 지나침", "가정 내 자율 규제 가능", "부모 계정 도용 등 부작용", "여가 권리 침해", "실효성 부족", "게임 산업 위축", "글로벌 경쟁력 저하", "학생들의 반발 유발"] },
+                { topic: "13세 미만 어린이의 소셜 미디어(SNS) 계정 생성을 제한해야 한다.", pro_kw: ["디지털 성범죄 노출 차단", "상대적 박탈감 및 우울증 예방", "스마트폰 중독 근절", "허위 정보 노출 방지", "정서 발달 보호", "사이버 폭력 예방", "수면 방해 해결", "왜곡된 신체 이미지 방지"], con_kw: ["소통 채널 단절", "시대에 뒤떨어진 규제", "올바른 사용법 교육이 우선", "표현의 자유 제한", "음성적 이용 증가", "디지털 소외감 발생", "학교 과제 수행 방해", "나이 속이기 편법 유발"] },
+                { topic: "식당이나 가게의 무인 기계(키오스크) 확대를 제한해야 한다.", pro_kw: ["디지털 소외계층(노인/장애인) 배려", "일자리 감소 우려", "인간적 소통 단절", "기계 오류 시 불편", "느린 결제 대기시간", "현금 사용자의 차별", "시각장애인 접근성 부족", "따뜻한 사회 분위기 조성"], con_kw: ["인건비 절감으로 소상공인 생존", "주문 정확도 향상", "비대면 위생적 선호", "기술 발전의 자연스러운 흐름", "외국어 지원 편리", "가게 운영 효율성 극대화", "메뉴 사진 확인 용이", "빠른 회전율 보장"] },
+                { topic: "자율주행 자동차 사고 시, 자동차 제조회사가 책임져야 한다.", pro_kw: ["운전 통제권이 회사(기계)에 있음", "기계 및 소프트웨어 결함 책임", "제조사의 안전 투자 강제", "소비자 보호", "기술에 대한 책무", "피해자 구제의 신속성", "안전 불감증 예방", "시스템 오류의 객관성"], con_kw: ["최종 관리자는 탑승자(인간)", "회사 책임 시 산업 발전 위축", "예측 불가능한 도로 변수 다수", "관리 소홀 문제", "도덕적 해이 유발", "자동차 가격 급등", "탑승자의 주의 의무 태만", "기술 상용화 지연"] }
+            ],
+            "🐶 동물과 생명 (윤리)": [
+                { topic: "반려동물 보유세를 도입해야 한다.", pro_kw: ["유기견 방지 효과", "동물 복지 예산 확보", "무분별한 입양 방지", "보호자 책임감 강화", "반려동물 인프라 확충", "이웃 피해 보상 체계", "충동 구매 근절", "선진국형 관리"], con_kw: ["경제적 부담 가중", "저소득층 양육 포기 우려", "오히려 유기 증가 가능성", "세금 징수 기준 모호", "동물을 물건 취급", "반려동물 산업 위축", "이중 과세 논란", "가족 구성원 차별"] },
+                { topic: "육식을 줄이고 채식을 장려하는 정책이 필요하다.", pro_kw: ["온실가스 감축", "환경 및 지구 보호", "동물권 존중", "성인병 예방 및 건강", "식량 자원 분배", "가축 전염병 예방", "수질 오염 방지", "미래 식량 안보"], con_kw: ["개인의 식습관 자유 침해", "축산업계 생존권 위협", "성장기 영양 불균형 우려", "대체육 가격 부담", "문화적 다양성 무시", "농가 경제 파탄", "단백질 섭취 부족", "과도한 국가 개입"] },
+                { topic: "유기동물 안락사를 금지해야 한다.", pro_kw: ["모든 생명의 존엄성", "안락사는 살인과 같음", "입양 홍보 강화로 해결", "동물 보호소 지원 확대", "인도주의적 접근", "생명 경시 풍조 방지", "끝까지 책임지는 문화", "행동 교정 가능성"], con_kw: ["보호소 수용 공간 한계", "질병 전염 우려", "운영 예산 부족", "고통스러운 연명 방지", "현실적 불가피성", "관리 인력의 극심한 피로", "열악한 환경 방치", "다른 유기견 구조 방해"] },
+                { topic: "맹견의 외출 시 입마개 착용을 의무화해야 한다.", pro_kw: ["시민의 안전 보장", "개물림 사고 예방", "타인의 공포심 완화", "견주의 책임 강화", "안전한 산책 문화", "어린이 및 노약자 보호", "법적 처벌 기준 명확화", "돌발 상황 대비"], con_kw: ["동물의 숨쉴 권리 제약", "스트레스 유발", "견종에 따른 편견", "훈련으로 통제 가능", "모든 맹견이 사납지 않음", "체온 조절 방해", "동물 학대 논란", "견주의 자율성 침해"] },
+                { topic: "돌고래 등 해양 포유류의 수족관 전시를 금지해야 한다.", pro_kw: ["넓은 바다가 고향임", "수조 내 극심한 스트레스", "단명 및 질병 유발", "자연 보호 의식 함양", "동물 학대 종식", "초음파 반사로 인한 고통", "생명 존중 교육", "야생 복귀 프로그램 지원"], con_kw: ["해양 생물 교육 기회", "멸종 위기종 연구", "구조된 개체의 피난처", "관리 수조의 안전성", "아동의 정서 발달", "관광 산업의 중요성", "방류 시 생존 희박", "전문가의 체계적 관리"] },
+                { topic: "곤충을 미래 식량으로 활용하는 것을 적극 장려해야 한다.", pro_kw: ["고단백 친환경 식량", "사육 시 물/땅 절약", "온실가스 배출 감소", "미래 식량 부족 대비", "경제적 가치 창출", "번식력이 매우 뛰어남", "우주 식량으로의 가치", "가축 질병으로부터 안전"], con_kw: ["극심한 혐오감", "위생 및 알레르기 문제", "먹거리 문화의 거부감", "대체육(콩고기) 등 다른 대안 존재", "가공 기술 부족", "미검증된 독성 우려", "소비자들의 외면", "대량 사육의 부작용"] }
+            ],
+            "🎨 문화 및 여가": [
+                { topic: "K팝 아이돌의 데뷔 연령을 법으로 제한해야 한다.", pro_kw: ["아동/청소년 수면권 보장", "성상품화 보호", "정상적 학교 교육 기회", "지나친 다이어트 방지", "가혹한 경쟁 보호", "정신적 스트레스 예방", "기본적 인권 존중", "올바른 가치관 형성"], con_kw: ["직업 선택의 자유 침해", "어릴 때 발굴해야 경쟁력 확보", "예술적 재능 꽃피울 기회", "기획사의 체계적 관리", "글로벌 트렌드 역행", "조기 교육의 중요성", "자발적 선택 무시", "대중문화 산업 위축"] },
+                { topic: "만화나 웹툰도 문학 작품으로 인정해야 한다.", pro_kw: ["시대상을 반영한 예술", "뛰어난 스토리텔링", "독자에게 주는 감동", "새로운 문화 장르", "글과 그림의 융합 예술", "뛰어난 접근성", "해외 수출 등 문화적 파급력", "다양한 상상력 자극"], con_kw: ["흥미 위주의 상업성", "깊이 있는 사유 부족", "자극적인 내용 다수", "전통 문학과의 차이", "가벼운 소비 문화", "언어 파괴 현상 조장", "시각적 요소에 의존", "오락 기능에 치중"] },
+                { topic: "스포츠 경기에서 비디오 판독(VAR)을 더 확대해야 한다.", pro_kw: ["공정한 결과 보장", "심판의 오심 방지", "억울한 선수 발생 차단", "정확한 룰 적용", "판정 시비 최소화", "기술 발전의 올바른 활용", "관중의 신뢰 확보", "스포츠 정신 수호"], con_kw: ["경기의 흐름 끊김", "심판의 권위 하락", "스포츠의 인간미 상실", "도입 비용 문제", "관중의 지루함 유발", "모든 상황 판독 불가능", "과도한 기계 의존", "심판 판정도 경기의 일부"] },
+                { topic: "국경일이나 공휴일에는 모든 학원의 운영을 쉬게 해야 한다.", pro_kw: ["학생의 진정한 휴식권", "가족과 함께할 시간 보장", "학원 강사의 휴일 보장", "사교육 의존도 감소", "공휴일의 의미 되새김", "과도한 경쟁 완화", "스트레스 없는 하루", "건강한 성장 도모"], con_kw: ["학생과 부모의 선택권 침해", "맞벌이 부부의 보육 공백", "학원 업계의 경제적 타격", "보충 학습 기회 박탈", "단기 집중 학습 방해", "불법 고액 과외 성행", "자기 주도 학습 공간 상실", "자율성 침해"] },
+                { topic: "게임을 e스포츠(정식 스포츠)로 인정해야 한다.", pro_kw: ["고도의 집중력과 전략", "팀워크와 공정한 규칙", "전 세계적 인기와 산업 규모", "아시안게임 정식 종목", "반사신경과 체력 요구", "새로운 여가 문화", "직업 창출 효과", "디지털 시대의 스포츠"], con_kw: ["신체적 활동(땀) 부족", "게임사 중심의 상업성", "중독성 유발 우려", "규칙이 게임사에 의해 바뀜", "전통 스포츠와의 괴리", "수명(인기)이 짧은 종목", "폭력성 문제", "건강 해칠 우려"] },
+                { topic: "박물관이나 미술관의 입장료를 무료로 해야 한다.", pro_kw: ["모두의 문화 향유권 보장", "교육적 목적 달성", "역사 의식 고취", "관광객 유치 효과", "문화 장벽 해소", "시민의 세금 환원", "학생들의 체험 학습 확대", "국가 문화 수준 향상"], con_kw: ["유지 및 보수 예산 부족", "전시 수준 저하 우려", "관람객 폭증으로 인한 쾌적함 저하", "수익자 부담 원칙", "작품 훼손 위험 증가", "직원 인건비 확보 어려움", "질 높은 기획전시 불가", "무료화로 인한 가치 하락"] }
+            ],
+            "💰 경제 및 소비": [
+                { topic: "초등학생에게 용돈 대신 체크카드를 발급하여 사용하게 해야 한다.", pro_kw: ["투명한 소비 기록", "디지털 금융 조기 교육", "동전/지폐 분실 위험 감소", "부모의 올바른 지도 가능", "편리한 결제", "위생적인 거래", "금융 사고 예방", "온라인 결제 학습"], con_kw: ["돈의 가치 체감 저하", "무감각한 과소비 우려", "카드 분실 및 도용 위험", "디지털 기기 의존", "오프라인 거래 제약", "수수료 발생 문제", "비밀번호 관리 어려움", "현금 계산 능력 저하"] },
+                { topic: "편의점 등에서 1회용 비닐봉지 제공을 금지해야 한다.", pro_kw: ["미세플라스틱 감소", "토양 및 해양 오염 방지", "장바구니 문화 정착", "후손을 위한 환경 보호", "쓰레기 처리 비용 감소", "야생 동물 보호", "친환경 대체품 개발 촉진", "불필요한 자원 낭비 억제"], con_kw: ["소비자의 심각한 불편", "종이봉투 등 대체품의 한계(찢어짐)", "소상공인 불만", "갑작스러운 규제 부작용", "재활용 비닐의 유용성", "대체품의 환경 오염(종이 제조 등)", "비 오는 날의 난감함", "강제적 규제 반발"] },
+                { topic: "패스트푸드(햄버거, 피자 등)에 비만세를 부과해야 한다.", pro_kw: ["정크푸드 소비 억제", "국민 건강 증진", "비만 치료 의료비 감소", "세금으로 건강 식단 지원", "경각심 부여", "아동 비만율 하락", "건강한 식재료 유도", "사회적 비용 절감"], con_kw: ["서민의 식비 부담 가중", "저소득층 차별", "비만의 원인은 복합적(운동 부족 등)", "식품 산업 위축", "개인 식습관에 국가 개입", "어떤 음식이 비만인지 기준 모호", "기업의 이윤 감소", "세수 확보를 위한 꼼수 논란"] },
+                { topic: "미성년자의 온라인 게임 아이템 결제를 제한해야 한다.", pro_kw: ["충동적 과소비 방지", "부모의 경제적 피해 예방", "사행성(뽑기) 중독 보호", "금전 감각 미숙 보호", "건전한 여가 문화", "게임사의 상술 규제", "환불 관련 분쟁 감소", "빚 발생 원천 차단"], con_kw: ["개인의 소비 자유 침해", "부모가 앱으로 통제 가능", "게임 산업 발전 저해", "용돈 내 자율적 소비 경험", "무조건적 차단은 우회 결제 유발", "스트레스 해소 제약", "결제 한도 등 대안 존재", "다른 취미와의 형평성"] },
+                { topic: "학교에서 금융 및 투자(주식 등) 교육을 의무화해야 한다.", pro_kw: ["자본주의 생존 필수 지식", "올바른 경제 관념 조기 형성", "금융 사기 예방", "자산 관리 능력 배양", "실용적인 교육 과정", "경제적 자립 지원", "사회 진출 시 도움", "돈의 흐름 이해"], con_kw: ["돈만 밝히는 물질만능주의 우려", "도박성 투자 조장 가능성", "기초 학목(국영수) 시간 부족", "교사들의 전문성 부족", "가정의 소득 격차 위화감", "실패 시 느끼는 좌절감", "이론과 실제의 차이", "학생 수준에 부적합"] },
+                { topic: "대형 마트의 의무 휴업일을 폐지해야 한다.", pro_kw: ["소비자의 주말 쇼핑 편의", "마트 근로자의 근무 유연성", "전통시장 살리기 효과 미미", "주변 상권 동반 활성화", "자유 시장 경제", "온라인 쇼핑과의 역차별 해소", "납품 농민들의 손해 방지", "소비 진작 효과"], con_kw: ["전통시장 및 골목상권 보호", "대형 마트 노동자의 휴식권 보장", "거대 자본의 독점 방지", "상생 협력의 상징", "동네 마트 매출 하락 방어", "독과점 심화", "지역 자본 유출", "무한 경쟁의 부작용"] }
+            ],
+            "🚀 과학 및 미래": [
+                { topic: "우주 개발에 국가 예산을 대규모로 투자해야 한다.", pro_kw: ["미래 자원 확보", "국가 기술 경쟁력 강화", "위성 기술 등 파급 효과", "우주 식민지 개척 대비", "인류의 과학적 진보", "기후 변화 모니터링", "새로운 일자리 창출", "선진국과의 격차 해소"], con_kw: ["천문학적 비용 부담", "지구 내부 문제(빈곤 등) 우선 해결", "실패 시 리스크 큼", "당장의 실생활 도움 부족", "우주 쓰레기 문제", "강대국의 우주 패권 경쟁", "무기화 우려", "불확실한 투자 수익"] },
+                { topic: "유전자 조작 식품(GMO)의 판매를 장려해야 한다.", pro_kw: ["식량 부족 문제 해결", "병충해 강함(농약 감소)", "영양 성분 강화", "생산 단가 하락", "기후 변화 적응", "수확량 폭발적 증가", "사막 등 척박한 땅 재배", "백신 함유 작물 개발"], con_kw: ["장기적 인체 유해성 미검증", "생태계 유전자 교란", "다국적 종자 기업 독점", "자연 섭리 위배", "알레르기 유발 가능성", "토착 식물 멸종 우려", "표시제도의 맹점", "슈퍼 잡초 발생"] },
+                { topic: "인간 복제 연구를 치료 목적으로 허용해야 한다.", pro_kw: ["난치병 및 장기 이식 해결", "거부 반응 없는 맞춤형 치료", "불임 부부의 희망", "수명 연장의 꿈", "생명 공학의 혁신", "유전병 예방", "재생 의학의 발전", "의료비용의 장기적 감소"], con_kw: ["인간 존엄성 심각한 훼손", "복제 인간의 인권 문제", "우생학(맞춤형 아기) 우려", "생명의 도구화", "자연의 질서 파괴", "범죄 악용 가능성", "정체성 혼란", "생명 경시 풍조 조장"] },
+                { topic: "플라스틱 사용을 줄이기 위해 종이 빨대 사용을 의무화해야 한다.", pro_kw: ["미세플라스틱 해양 오염 방지", "분해되기 쉬운 친환경 소재", "환경 보호 경각심 고취", "자연 순환 가능", "지속 가능한 소비", "야생 동물 생존 보호", "플라스틱 쓰레기 산 문제 해결", "친환경 기술 발전 촉진"], con_kw: ["음료 맛 변질 및 눅눅함", "종이 생산을 위한 산림 훼손", "제작 과정의 탄소 배출 증가", "소비자 불편 가중", "플라스틱 컵은 두면서 빨대만 규제하는 모순", "코팅 물질 재활용 불가", "원가 상승", "근본적 해결책 아님"] },
+                { topic: "인공지능 로봇이 인간의 일자리를 대체하는 것은 긍정적이다.", pro_kw: ["위험하고 힘든 노동 해방", "생산성 폭발적 증가", "창의적 활동에 집중 가능", "주 4일제 등 여가 증가", "제품 가격 하락", "고령화 사회의 노동력 부족 해결", "의료/복지 서비스 품질 향상", "인간의 편의 극대화"], con_kw: ["대규모 실업 사태 발생", "빈부 격차 극심화", "인간의 가치 상실", "로봇세 등 경제 혼란", "기술 종속 심화", "단순 노동자의 생존권 위협", "예측 불가능한 시스템 오류", "인간 소외 현상"] },
+                { topic: "타임머신이 개발된다면 사용을 법으로 허용해야 한다.", pro_kw: ["역사적 미스터리 해결", "과거의 비극적 사고 예방", "멸종 동물 연구", "미래 재앙 회피", "궁극의 과학 탐구", "잘못된 선택의 복구", "질병의 기원 연구", "잃어버린 문화 복원"], con_kw: ["나비효과로 인한 현재 붕괴", "역사 조작 및 범죄 악용", "시간 패러독스 오류", "우주 질서 파괴", "특권층의 독점", "기억의 혼란", "운명론적 허무주의", "엄청난 에너지 소비"] }
+            ],
+            "🏛️ 정치 및 시민": [
+                { topic: "국회의원 선거 투표 연령을 만 16세로 낮춰야 한다.", pro_kw: ["청소년 정책 관심 증대", "충분한 정치 판단력 보유", "미래 세대의 목소리 반영", "조기 민주시민 교육", "세계적 추세", "입시 등 당사자 문제 해결", "정치 참여 권리 보장", "사회의 역동성 확보"], con_kw: ["미성숙한 판단 우려", "교실의 지나친 정치화", "학업 방해", "부모/교사 의견에 휘둘림", "포퓰리즘(인기 위주) 선거 우려", "정치꾼들의 학교 개입", "친구 간 정치 갈등", "책임 없는 권리 행사"] },
+                { topic: "선거 날 투표를 하지 않으면 벌금을 내게 해야 한다(의무투표제).", pro_kw: ["투표율 상승", "대표성 강화", "정치 무관심 해결", "소외계층 목소리 반영", "민주주의 권리이자 의무", "정치인의 긴장감 조성", "국가 정책의 정당성 확보", "선거 비용 낭비 방지"], con_kw: ["기권(안 뽑을 권리) 침해", "벌금 낼 돈 없는 서민 차별", "묻지마 투표(아무나 찍기) 속출", "정치 혐오 가중", "자유 민주주의 위배", "후보자 정보 부족 시 억지 투표", "위헌적 요소 존재", "벌금 징수의 행정력 낭비"] },
+                { topic: "악성 댓글을 작성한 사람의 인터넷 실명제를 도입해야 한다.", pro_kw: ["익명성 뒤의 범죄 예방", "책임감 있는 글쓰기 문화", "마녀사냥 및 허위사실 차단", "피해자 자살 방지", "건전한 토론장 형성", "사이버 폭력 억제력", "신뢰할 수 있는 정보 공유", "빠른 범인 검거"], con_kw: ["표현의 자유 심각한 위축", "개인정보 대량 유출 위험", "내부 고발 등 공익 신고 방해", "해외 사이트로 도피", "과거 위헌 판결 사례", "권력에 대한 비판 위축", "소수 의견 묵살", "해킹 시 2차 피해 막대"] },
+                { topic: "흉악범의 얼굴과 신상을 무조건 공개해야 한다.", pro_kw: ["국민의 알 권리", "추가 범죄 예방", "사회적 경각심 최고조", "범죄 억제 효과", "피해자 인권 존중", "재범 가능성 차단", "공공의 안전 보장", "사법 정의 실현"], con_kw: ["무죄 추정의 원칙 위배", "가족에 대한 연좌제 피해", "마녀사냥식 여론 재판", "교화 및 사회 복귀 원천 차단", "분노 해소용 포퓰리즘", "초상권 침해 논란", "오판 시 회복 불가능", "범죄 억제 효과 미비"] },
+                { topic: "촉법소년(형사처벌을 받지 않는 나이)의 연령 기준을 낮춰야 한다.", pro_kw: ["청소년 범죄의 흉악화", "나이를 악용한 지능적 범죄 방지", "피해자 보호 우선", "책임에 맞는 처벌", "사회적 경고 효과", "사법 제도의 현실화", "재범 방지 효과", "시민들의 불안감 해소"], con_kw: ["처벌보다 교화가 먼저", "낙인 찍혀 영원한 범죄자 양산", "범죄 환경(가정/사회)의 책임", "엄벌주의의 효과 미비", "유엔 아동권리협약 위배", "보호관찰 시스템 강화가 먼저", "미성숙한 뇌 발달 고려", "근본적 해결책 아님"] },
+                { topic: "가짜 뉴스를 퍼뜨린 사람을 강력하게 처벌해야 한다.", pro_kw: ["여론 선동 방지", "사회적 혼란 및 분열 억제", "정확한 정보 습득 권리", "명예 훼손 예방", "건전한 언론 환경", "선거 등 중요 행사 방해 차단", "타인의 인격권 보호", "사회적 신뢰 회복"], con_kw: ["가짜 뉴스의 기준 모호함", "정부의 언론 통제 수단 전락", "표현의 자유 억압", "풍자 및 패러디 위축", "사전 검열의 위험성", "의도치 않은 실수 처벌", "민주주의 훼손 우려", "비판적 여론 형성 차단"] }
+            ]
+        };
+
+        let currentTopic = "";
+        let currentProKW = [];
+        let currentConKW = [];
+        let timerInterval = null;
+        let startTime = 0;
+        const apiKey = ""; // 생성형 AI 호출을 위한 API 키 (환경에서 자동 주입됨)
+
+        // 외부(Firebase 스크립트)에서 호출할 수 있도록 글로벌 함수로 등록
+        window.hideLoginScreenAndStart = function() {
+            document.getElementById('screenLogin').classList.remove('active');
+            renderCategories();
+            showScreen('screen1');
+        };
+
+        window.showLoginScreen = function() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screenLogin').classList.add('active');
+            window.scrollTo(0, 0);
+        };
+
+        function renderCategories() {
+            const catContainer = document.getElementById('categoryButtons');
+            catContainer.innerHTML = "";
+            const categories = Object.keys(debateData);
+            
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'cat-btn';
+                btn.innerText = cat;
+                btn.onclick = () => loadTopics(cat, btn);
+                catContainer.appendChild(btn);
+            });
+        }
+
+        function loadTopics(category, btn) {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const container = document.getElementById('topicsContainer');
+            const list = document.getElementById('topicList');
+            const title = document.getElementById('selectedCategoryTitle');
+            
+            list.innerHTML = "";
+            title.innerText = `📋 [${category}] 토론 주제 목록`;
+            container.style.display = "block";
+            
+            document.getElementById('customTopicInput').value = ""; 
+
+            const topics = debateData[category];
+            topics.forEach(t => {
+                const tBtn = document.createElement('button');
+                tBtn.className = 'topic-btn';
+                tBtn.innerText = t.topic;
+                tBtn.onclick = () => selectTopic(tBtn, t);
+                list.appendChild(tBtn);
+            });
+        }
+
+        function selectTopic(btn, topicObj) {
+            document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('customTopicInput').value = "";
+            
+            currentTopic = topicObj.topic;
+            currentProKW = topicObj.pro_kw;
+            currentConKW = topicObj.con_kw;
+        }
+
+        function clearTopicSelection() {
+            document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('selected'));
+            currentTopic = "";
+            currentProKW = ["선생님 지정 주제", "우리의 의견", "근거 찾기", "정확한 팩트", "자신감 있는 발표", "생생한 예시", "논리적인 흐름", "상대방 설득"];
+            currentConKW = ["문제점 분석", "논리적 반박", "대안 제시", "구체적 예시", "날카로운 질문", "모순점 찾기", "정확한 데이터", "치명적 약점 지적"];
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function goToStep2() {
+            const customInput = document.getElementById('customTopicInput').value.trim();
+            if (customInput !== "") {
+                clearTopicSelection(); 
+                currentTopic = customInput;
+            }
+
+            if (!currentTopic) {
+                showAlert("위에 있는 목록에서 주제를 고르거나 직접 입력 칸에 적어주세요!");
+                return;
+            }
+
+            document.getElementById('displayTopicStep2').innerText = "📢 " + currentTopic;
+            showScreen('screen2');
+        }
+
+        function goToStep3() {
+            const isPro = document.getElementById('stancePro').checked;
+            const isCon = document.getElementById('stanceCon').checked;
+
+            if (!isPro && !isCon) {
+                showAlert("찬성 또는 반대 입장을 먼저 선택해야 다음으로 넘어갈 수 있습니다.");
+                return;
+            }
+
+            document.getElementById('displayTopicStep3').innerText = "📢 " + currentTopic;
+            const stanceStr = isPro ? "⭕ 찬성" : "❌ 반대";
+            const badgeColor = isPro ? "var(--pro-color)" : "var(--con-color)";
+            
+            document.getElementById('step3BadgeArea').innerHTML = `<span class="badge" style="background-color:${badgeColor}; font-size:1.1em; padding:8px 20px;">나의 입장 : ${stanceStr}</span>`;
+
+            const myKwArr = isPro ? currentProKW : currentConKW;
+            const oppKwArr = isPro ? currentConKW : currentProKW;
+
+            const myKwHtml = myKwArr.map(k => `<span class="keyword">#${k}</span>`).join(" ");
+            const oppKwHtml = oppKwArr.map(k => `<span class="opp-keyword">#${k}</span>`).join(" ");
+
+            document.getElementById('myHintBox').innerHTML = `<strong>💡 [활용하기 좋은 핵심 단어 힌트]</strong><br><br>${myKwHtml}`;
+            document.getElementById('opponentBox').innerHTML = `<strong>🛡️ [상대방이 사용할 것으로 예상되는 단어들]</strong><br><br>${oppKwHtml}<br><br><span style="color:#e53e3e; font-size:0.9em;">👉 상대방은 이 단어들로 나를 공격할 것입니다. 내 근거를 적을 때 어떻게 방어할지 미리 적어두면 완벽합니다!</span>`;
+            
+            document.getElementById('opponentBox').style.display = 'none';
+            showScreen('screen3');
+        }
+
+        function toggleOpponent() {
+            const box = document.getElementById('opponentBox');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function goToStep4() {
+            const claim = document.getElementById('myClaim').value.trim();
+            const evidence = document.getElementById('myEvidence').value.trim();
+
+            if (!claim && !evidence) {
+                showConfirm("주장과 근거를 하나도 적지 않았습니다.\n이대로 실전 토론장에 들어갈까요?", () => {
+                    executeStep4Move(claim, evidence);
+                });
+            } else {
+                executeStep4Move(claim, evidence);
+            }
+        }
+
+        function executeStep4Move(claim, evidence) {
+            document.getElementById('displayTopicStep4').innerText = "📢 " + currentTopic;
+            
+            const isPro = document.getElementById('stancePro').checked;
+            const badgeColor = isPro ? "var(--pro-color)" : "var(--con-color)";
+            const stanceStr = isPro ? "찬성" : "반대";
+            
+            document.getElementById('savedStanceBadgeStep4').innerHTML = `<div class="badge" style="background-color: ${badgeColor};">나의 입장 : ⭕ ${stanceStr}</div>`;
+            
+            let combinedClaim = claim;
+            if (evidence) {
+                combinedClaim += "\n\n[내가 준비한 상세 근거]\n" + evidence;
+            }
+            
+            document.getElementById('liveClaim').value = combinedClaim;
+            document.getElementById('liveOpponentText').value = ""; 
+            document.getElementById('aiCoachBox').style.display = 'none';
+
+            showScreen('screen4');
+            startTimer();
+        }
+
+        function searchGoogle() {
+            const query = encodeURIComponent(`"${currentTopic}" 토론 근거`);
+            window.open(`https://www.google.com/search?q=${query}`, '_blank');
+        }
+
+        // AI API 재시도 로직
+        async function fetchWithRetry(url, prompt, retries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "당신은 초등학생들의 토론을 돕는 친절하고 똑똑한 AI 코치입니다. 항상 존댓말을 사용하고, 초등학생의 눈높이에 맞춰 이해하기 쉽게 설명해 주세요." }] }
+            };
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error('API Request Failed');
+                    const data = await response.json();
+                    return data.candidates[0].content.parts[0].text;
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(res => setTimeout(res, delays[i]));
+                }
+            }
+        }
+
+        async function getCoaching() {
+            const coachBox = document.getElementById('aiCoachBox');
+            const myClaim = document.getElementById('liveClaim').value.trim();
+            const opponentText = document.getElementById('liveOpponentText').value.trim();
+            const stanceStr = document.getElementById('stancePro').checked ? "찬성" : "반대";
+
+            if (!opponentText) {
+                showAlert("AI가 전략을 짜려면 상대방의 의견이 필요해요!\n[상대측 의견] 칸에 상대방의 발언을 먼저 적어주세요.");
+                return;
+            }
+
+            coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br><span style="color:#718096;">AI 코치가 실시간으로 상대방의 약점을 분석 중입니다... 잠시만 기다려주세요 ⏳</span>`;
+            coachBox.style.display = 'block';
+
+            const prompt = `토론 주제: "${currentTopic}"\n학생의 입장: "${stanceStr}"\n학생의 현재 주장: "${myClaim}"\n상대방이 방금 한 주장: "${opponentText}"\n\n위 내용을 바탕으로, 상대방의 주장을 논리적으로 반박할 수 있는 방법과 학생의 주장을 효과적으로 방어할 수 있는 전략(날카로운 질문, 좋은 예시 등)을 초등학생 눈높이에 맞게 3~4문장으로 핵심만 짚어서 친절하게 조언해 주세요.`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            try {
+                const responseText = await fetchWithRetry(url, prompt);
+                coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br>${responseText.replace(/\n/g, '<br>')}`;
+            } catch (error) {
+                coachBox.innerHTML = `<strong>[🤖 토론 전략 코칭]</strong><br><br>앗, 코칭을 불러오는데 실패했어요. 인터넷 연결을 확인하고 다시 눌러주세요.`;
+            }
+        }
+
+        function startTimer() {
+            stopTimer();
+            document.getElementById('timerDisplay').innerText = "00:00";
+            startTime = Date.now();
+            
+            timerInterval = setInterval(() => {
+                const diff = Date.now() - startTime;
+                const minutes = Math.floor(diff / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                document.getElementById('timerDisplay').innerText = 
+                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+        }
+
+        function resetApp() {
+            showConfirm("정말 주제 선택으로 돌아갈까요?\n작성하신 모든 내용이 사라집니다.", () => {
+                stopTimer();
+                
+                currentTopic = "";
+                currentProKW = [];
+                currentConKW = [];
+                
+                document.getElementById('customTopicInput').value = "";
+                document.getElementById('stancePro').checked = false;
+                document.getElementById('stanceCon').checked = false;
+                document.getElementById('myClaim').value = "";
+                document.getElementById('myEvidence').value = "";
+                document.getElementById('liveClaim').value = "";
+                document.getElementById('liveOpponentText').value = "";
+                document.querySelector('.debate-room textarea').value = ""; 
+                
+                document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('selected'));
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('topicsContainer').style.display = 'none';
+
+                showScreen('screen1');
+            });
+        }
+
+        function endDebate() {
+            stopTimer();
+            const finalTime = document.getElementById('timerDisplay').innerText;
+            showAlert(`🎉 토론이 끝났습니다!\n🔥 치열한 토론 진행 시간: ${finalTime}\n\n서로의 의견을 존중하며 발표한 우리 반 친구들 모두 고생했습니다!`);
+            
+            setTimeout(() => {
+                 currentTopic = "";
+                 showScreen('screen1');
+            }, 1000);
+        }
+
+    </script>
+</body>
+</html>
